@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import sys
 from PIL import Image
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
@@ -10,13 +9,11 @@ import torch.nn as nn
 from typing import *
 from enum import Enum
 from colorsys import rgb_to_hsv, hsv_to_rgb
-from .FeaturingModel import FeaturingModel, ClothClassificationModel
-# from pipeline.FeaturingModel import FeaturingModel, ClothClassificationModel
-sys.path.append("pipeline/SimilarityModel.py")
-class FeatureData(Enum):
-    LAST_ACTIVATION_VOLUME = "last_activation_volume"
-    GRAM_MATRIX = "gram_matrix"
-    AVERAGE_RGB = "average_rgb"
+from pipeline.FeaturingModel import FeaturingModel, ClothClassificationModel
+
+LAST_ACTIVATION_VOLUME = "last_activation_volume"
+GRAM_MATRIX = "gram_matrix"
+AVERAGE_RGB = "average_rgb"
 
 LOWER_DEFAULT_COLOR = [(0, 0, 0), (255, 255, 255), (156, 156, 155), (217, 217, 215), (83, 86, 91), (254, 255, 239), (0, 31, 98), (61, 63, 107), (97, 134, 176), (38, 58, 84), (35, 40, 51), (33, 35, 34)]
 PERSONAL_COLOR_RGB = {
@@ -64,10 +61,11 @@ class SimilarityModel:
 
 
     def getPersonalColor(self, user_input_features):
-        average_rgb = user_input_features[0]["skin"][FeatureData.AVERAGE_RGB]
+        print(user_input_features[0]["skin"].keys())
+        average_rgb = user_input_features[0]["skin"][AVERAGE_RGB]
         if len(user_input_features) > 1:
             for feature in user_input_features[1:]:
-                average_rgb += feature["skin"][FeatureData.AVERAGE_RGB]
+                average_rgb += feature["skin"][AVERAGE_RGB]
             average_rgb /= len(user_input_features)
         average_rgb = average_rgb.tolist()
 
@@ -123,16 +121,16 @@ class SimilarityModel:
         target_feature = torch.load(target_input, map_location=self.device)
 
         last_activation_volume_similarity = self.cosine_similarity_model(
-            torch.flatten(user_feature[type][FeatureData.LAST_ACTIVATION_VOLUME]),
-            torch.flatten(target_feature[type][FeatureData.LAST_ACTIVATION_VOLUME]))
+            torch.flatten(user_feature[type][LAST_ACTIVATION_VOLUME]),
+            torch.flatten(target_feature[type][LAST_ACTIVATION_VOLUME]))
 
-        gram_matrix_similarity = self.l1_similarity_model(user_feature[type][FeatureData.GRAM_MATRIX],
-                                                          target_feature[type][FeatureData.GRAM_MATRIX])
+        gram_matrix_similarity = self.l1_similarity_model(user_feature[type][GRAM_MATRIX],
+                                                          target_feature[type][GRAM_MATRIX])
 
         personal_color_rgb = PERSONAL_COLOR_RGB[personal_color] + (LOWER_DEFAULT_COLOR if type=="lower" else [])
-        personal_color_similarity = self.l1_similarity_model(target_feature[type][FeatureData.AVERAGE_RGB], torch.tensor(personal_color_rgb[0]))
+        personal_color_similarity = self.l1_similarity_model(target_feature[type][AVERAGE_RGB], torch.tensor(personal_color_rgb[0]))
         for rgb in personal_color_rgb[1:]:
-            new_sim = self.l1_similarity_model(target_feature[type][FeatureData.AVERAGE_RGB], torch.tensor(rgb))
+            new_sim = self.l1_similarity_model(target_feature[type][AVERAGE_RGB], torch.tensor(rgb))
             personal_color_similarity = max(personal_color_similarity, new_sim)
 
         final_similarity = last_activation_volume_similarity * self.alpha[0] + gram_matrix_similarity * self.alpha[1] + personal_color_similarity * self.alpha[2]
@@ -144,7 +142,7 @@ class SimilarityModel:
     def __call__(self,
                  user_inputs: List[Image.Image],
                  type: Literal["upper", "lower"],
-                 k: int = 2,
+                 k: int = 5,
                  personal_color: Optional[str] = None):
         '''
         유저 입력을 토대로 유사도를 계산하여 상위 k개를 반환하는 함수입니다.
@@ -157,26 +155,18 @@ class SimilarityModel:
 
         :return: 유사도 기준 상위 k개의 이미지 파일 경로, 추천 대상 상품들의 유사도 배열
         '''
-        print("model이다")
-
         user_features = [self.featuring_model(user_input) for user_input in user_inputs]
 
-        print('user features :')
-        print(user_features)
         if personal_color==None:
             personal_color = self.getPersonalColor(user_features)
-
-        print("model 1")
 
         similarity_result = {path:0.0 for path in self.recommended[type]}
 
         for user_feature in user_features:
             for target_input in self.recommended[type]:
                 similarity_result[target_input] += self.getSimilarity(user_feature, target_input, type, personal_color).to(self.cpu_device).item()
-        print("model 2")
 
         sorted_similarity_result = sorted(similarity_result.items(), key=lambda item: item[1], reverse=True)
-        print("model 끝이다")
 
         return [k for k, v in sorted_similarity_result][:k], sorted_similarity_result
 
