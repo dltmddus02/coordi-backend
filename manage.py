@@ -2,7 +2,7 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-from cv_proj.pipeline.FeaturingModel import FeaturingModel, ClothClassificationModel
+from outfit.pipeline.FeaturingModel import FeaturingModel, ClothClassificationModel
 
 
 
