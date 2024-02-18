@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import sys
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
@@ -9,9 +8,8 @@ import torch.nn as nn
 from transformers import SegformerImageProcessor, AutoModelForSemanticSegmentation
 from typing import *
 from copy import deepcopy
-
-from .Unnormalize import UnNormalize
-sys.path.append("pipeline/FeaturingModel.py")
+from tqdm import tqdm
+from pipeline.Unnormalize import UnNormalize
 
 
 CLASS_NUM = 20
@@ -71,9 +69,9 @@ class FeaturingModel:
     def __init__(self,
                  useGPU: bool = False,
                  segformer_path: str = "mattmdjaga/segformer_b2_clothes",
-                 classifier_path: str = "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt",
+                 classifier_path: str = "./checkpoint/classifier_efficientnetb0.pt",
                  classifier_input_size: int = 224
-                ):
+                 ):
         '''
         특징 추출 모델
         
@@ -102,7 +100,7 @@ class FeaturingModel:
         self.totensor = torchvision.transforms.ToTensor()
 
         self.transformer = transforms.Compose([transforms.ToTensor(),
-                                          torchvision.transforms.Resize((self.classifier_input_size)*2),
+                                          torchvision.transforms.Resize((self.classifier_input_size, self.classifier_input_size)),
                                           transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                                           ])
         self.unnormalize = UnNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -123,11 +121,22 @@ class FeaturingModel:
             for label in labels[1:]:
                 mask = torch.logical_or(mask, seg==label)
         masks = torch.stack([mask]*image_channel, dim=0)
-        y, x = torch.where(mask)
+        isExist = not torch.all(~masks).item()
 
         image = self.totensor(image_ori)
-        image[~masks] = background
-        image = self.topilimage(crop(image, torch.min(y), torch.min(x), torch.max(y)-torch.min(y), torch.max(x)-torch.min(x)))
+        if isExist:
+            y, x = torch.where(mask)
+
+            image[~masks] = background
+
+            h = torch.max(y)-torch.min(y)
+            w = torch.max(x)-torch.min(x)
+            if h>0 and w>0:
+                image = self.topilimage(crop(image, torch.min(y), torch.min(x), h, w))
+            else:
+                image = self.topilimage(torch.zeros_like(image))
+        else:
+            image = self.topilimage(torch.zeros_like(image))
 
         return image, masks
 
@@ -138,10 +147,8 @@ class FeaturingModel:
         return gram
 
     def __call__(self, x, color_space: str = "RGB", only_clothes: bool = False):
-        print("feature model 시작")
         image = x.convert(color_space)
-        # print("feature model image : ")
-        # print(image)
+
         # 전신 사진 분할
         inputs = self.segformer_processor(images=image, return_tensors="pt")
         outputs = self.segformer_model(**inputs)
@@ -153,8 +160,6 @@ class FeaturingModel:
             align_corners=False,
         )
         pred_seg = upsampled_logits.argmax(dim=1)[0]
-        # print("feature model 1")
-
         # 분할 사진 Feature 추출 - 옷
         result = {}
         PART_LABEL = deepcopy(CLOTHES_PART_LABEL)
@@ -164,6 +169,7 @@ class FeaturingModel:
         for name, labels in PART_LABEL.items():
             features = {}
             part_image = self.getPart(image, pred_seg, labels, image_channel=COLOR_SPACE_MAP[color_space])[0]
+
             input_classifier = self.transformer(part_image).unsqueeze(0).to(self.device)
             output_classifier = self.classifier_model(input_classifier)
             output_classifier = self.classifier_compressor(output_classifier)
@@ -173,13 +179,11 @@ class FeaturingModel:
             features["average_rgb"] = 255*self.unnormalize(input_classifier).squeeze(0).mean(dim=-1).mean(dim=-1)
 
             result[name] = features
-        print("feature model 끝")
-
         return result
 
 if __name__=="__main__":
     model = FeaturingModel()
-    for i in range(0, 5+1):
-        feature = model(Image.open(f"../test/image/{i}.jpg"), only_clothes=True)
-        save_feature(feature, f"../test/features/feature{i}.pt")
+    for i in tqdm(range(0, 1443+1)):
+        feature = model(Image.open(f"../data/image/{i}.jpg"), only_clothes=True)
+        save_feature(feature, f"../data/features/{i}.pt")
     print("Complete")
