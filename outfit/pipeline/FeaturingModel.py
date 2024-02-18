@@ -138,9 +138,9 @@ class FeaturingModel:
         return gram
 
     def __call__(self, x, color_space: str = "RGB", only_clothes: bool = False):
-        print("feature model이다")
+        print("feature model 시작")
         image = x.convert(color_space)
-        print("feature model image : ")
+        # print("feature model image : ")
         # print(image)
         # 전신 사진 분할
         inputs = self.segformer_processor(images=image, return_tensors="pt")
@@ -153,7 +153,7 @@ class FeaturingModel:
             align_corners=False,
         )
         pred_seg = upsampled_logits.argmax(dim=1)[0]
-        print("feature model 1")
+        # print("feature model 1")
 
         # 분할 사진 Feature 추출 - 옷
         result = {}
@@ -173,7 +173,7 @@ class FeaturingModel:
             features["average_rgb"] = 255*self.unnormalize(input_classifier).squeeze(0).mean(dim=-1).mean(dim=-1)
 
             result[name] = features
-        print("feature model 2")
+        print("feature model 끝")
 
         return result
 

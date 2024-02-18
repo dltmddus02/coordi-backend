@@ -153,7 +153,7 @@ class SimilarityModel:
                                 반드시 PERSONAL_COLOR_RGB의 key 중 하나로 입력이 되어야 한다.
         :param k: 유사도 기준 상위 몇개의 이미지를 반환할 것인지
 
-        :return: 유사도 기준 상위 k개의 이미지 파일 경로, 추천 대상 상품들의 유사도 배열
+        :return: 유사도 기준 상위 k개의 이미지 파일 feature, 추천 대상 상품들의 유사도 배열
         '''
         user_features = [self.featuring_model(user_input) for user_input in user_inputs]
 
@@ -173,7 +173,7 @@ class SimilarityModel:
 
 if __name__=="__main__":
     test_recommended = {
-        "upper":[f"../test/features/feature{i}.pt" for i in range(0, 14+1)],
+        "upper":[f"../laurant051/features/{i}.pt" for i in range(0, 14+1)],
         "lower":[],
     }
     model = SimilarityModel(test_recommended, FeaturingModel())
