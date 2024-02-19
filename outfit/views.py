@@ -34,36 +34,13 @@ def process_image(request):
             rgb_image.save(output_io, format='JPEG')
             user_inputs.append(rgb_image)
 
-            # print("요기까지 오류 처리")
-            # user_inputs = [rgb_image]
-            # test_recommended = {
-            #     "upper":[f"../test/features/feature{i}.pt" for i in range(0, 14+1)],
-            #     "lower":[],
-            # }
-
-            # 버튼 누르면 요고 실행
-            # model = SimilarityModel(test_recommended, FeaturingModel())
-            # topk, similarity_result = model(user_inputs, "upper")
-
-            # user_inputs = []
-            # for i in range(0, 5+1):
-            #     user_inputs.append(Image.open(f"test/image/{i}.jpg").convert("RGB"))
-            # print(user_inputs)
-            # print("model 끝나고 돌아왔당")
-            # print(topk)
-            print("\n")
-            # print(similarity_result)
             print("오류 처리??")
             
             return JsonResponse({
                 'message': '이미지가 처리됨.',
-                # 'user_inputs': user_inputs
-                # 'result_images': result_images,
-                # 'similarity_scores': similarity_scores
             })
         except Exception as e:
             # 이미지 처리 중 예외가 발생한 경우 오류 응답 반환
-            # print("에러")
             print(traceback.format_exc())
             return JsonResponse({'error': '이미지 처리 중 오류 발생. 에러 메시지: ' + str(e)})
     else:
@@ -93,11 +70,11 @@ def show_top3_image(request):
             for path in topk_upper:
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
-                print(type(n))
-                print(n)
-                print(type(csv_df['index']))
+                # print(type(n))
+                # print(n)
+                # print(type(csv_df['index']))
                 matching_row = csv_df[csv_df['index'] == int(n)]                
-                print(matching_row)
+                # print(matching_row)
                 new_topk_upper_path.append(matching_row['img_url'].values[0])
                 new_topk_upper_shopping.append(matching_row['shopping_url'].values[0])
             for path in topk_lower:
