@@ -9,7 +9,7 @@ from transformers import SegformerImageProcessor, AutoModelForSemanticSegmentati
 from typing import *
 from copy import deepcopy
 from tqdm import tqdm
-from pipeline.Unnormalize import UnNormalize
+from .Unnormalize import UnNormalize
 
 
 CLASS_NUM = 20
@@ -69,7 +69,7 @@ class FeaturingModel:
     def __init__(self,
                  useGPU: bool = False,
                  segformer_path: str = "mattmdjaga/segformer_b2_clothes",
-                 classifier_path: str = "./checkpoint/classifier_efficientnetb0.pt",
+                 classifier_path: str = "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt",
                  classifier_input_size: int = 224
                  ):
         '''
