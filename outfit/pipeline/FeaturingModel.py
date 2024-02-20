@@ -9,7 +9,7 @@ from transformers import SegformerImageProcessor, AutoModelForSemanticSegmentati
 from typing import *
 from copy import deepcopy
 from tqdm import tqdm
-from .Unnormalize import UnNormalize
+from pipeline.Unnormalize import UnNormalize
 
 
 CLASS_NUM = 20
@@ -50,6 +50,8 @@ class ClothClassificationModel(nn.Module):
 
         self.classifier = nn.Linear(compressor_channel, num_classes)
 
+
+
     def forward(self, x):
         x = self.features(x)
         # print(x.shape)
@@ -69,8 +71,9 @@ class FeaturingModel:
     def __init__(self,
                  useGPU: bool = False,
                  segformer_path: str = "mattmdjaga/segformer_b2_clothes",
-                 classifier_path: str = "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt",
-                 classifier_input_size: int = 224
+                 classifier_path: str = "./checkpoint/classifier_efficientnetb0.pt",
+                 classifier_input_size: int = 224,
+                 layer_gram_matrix: int = 4
                  ):
         '''
         특징 추출 모델
@@ -104,6 +107,7 @@ class FeaturingModel:
                                           transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                                           ])
         self.unnormalize = UnNormalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        self.layer_gram_matrix = layer_gram_matrix
 
     def changeDevice(self, useGPU: bool):
         self.device = torch.device("cpu")
@@ -160,6 +164,7 @@ class FeaturingModel:
             align_corners=False,
         )
         pred_seg = upsampled_logits.argmax(dim=1)[0]
+
         # 분할 사진 Feature 추출 - 옷
         result = {}
         PART_LABEL = deepcopy(CLOTHES_PART_LABEL)
@@ -171,19 +176,21 @@ class FeaturingModel:
             part_image = self.getPart(image, pred_seg, labels, image_channel=COLOR_SPACE_MAP[color_space])[0]
 
             input_classifier = self.transformer(part_image).unsqueeze(0).to(self.device)
-            output_classifier = self.classifier_model(input_classifier)
+            activation_volume = self.classifier_model[:self.layer_gram_matrix](input_classifier)
+            output_classifier = self.classifier_model[self.layer_gram_matrix:](activation_volume)
             output_classifier = self.classifier_compressor(output_classifier)
 
             features["last_activation_volume"] = torch.flatten(self.avgpool(output_classifier), 1).squeeze(0).to(self.cpu_device)
-            features["gram_matrix"] = self.gram_matrix(output_classifier).to(self.cpu_device)
+            features["gram_matrix"] = self.gram_matrix(activation_volume).to(self.cpu_device)
             features["average_rgb"] = 255*self.unnormalize(input_classifier).squeeze(0).mean(dim=-1).mean(dim=-1)
 
             result[name] = features
+
         return result
 
 if __name__=="__main__":
     model = FeaturingModel()
-    for i in tqdm(range(0, 1443+1)):
-        feature = model(Image.open(f"../data/image/{i}.jpg"), only_clothes=True)
-        save_feature(feature, f"../data/features/{i}.pt")
+    for i in tqdm(range(0, 0+1)):
+        feature = model(Image.open(f"../data/slowand/image/{i}.jpg"), only_clothes=True)
+        save_feature(feature, f"../data/slowand/features/{i}.pt")
     print("Complete")
