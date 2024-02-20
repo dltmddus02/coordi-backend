@@ -120,9 +120,9 @@ class SimilarityModel:
     def getSimilarity(self, user_feature, target_input, type: str, personal_color: str):
         target_feature = torch.load(target_input, map_location=self.device)
 
-        last_activation_volume_similarity = self.cosine_similarity_model(
-            torch.flatten(user_feature[type][LAST_ACTIVATION_VOLUME]),
-            torch.flatten(target_feature[type][LAST_ACTIVATION_VOLUME]))
+        last_activation_volume_similarity = self.l1_similarity_model(
+            user_feature[type][LAST_ACTIVATION_VOLUME],
+            target_feature[type][LAST_ACTIVATION_VOLUME])
 
         gram_matrix_similarity = self.l1_similarity_model(user_feature[type][GRAM_MATRIX],
                                                           target_feature[type][GRAM_MATRIX])
@@ -186,4 +186,3 @@ if __name__=="__main__":
     print(topk)
     print("\n")
     print(similarity_result)
-
