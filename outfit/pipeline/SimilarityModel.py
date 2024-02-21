@@ -9,7 +9,7 @@ import torch.nn as nn
 from typing import *
 from enum import Enum
 from colorsys import rgb_to_hsv, hsv_to_rgb
-from .FeaturingModel import FeaturingModel, ClothClassificationModel
+from FeaturingModel import FeaturingModel, ClothClassificationModel
 
 LAST_ACTIVATION_VOLUME = "last_activation_volume"
 GRAM_MATRIX = "gram_matrix"
@@ -29,7 +29,8 @@ PERSONAL_COLOR_RGB = {
 
 class SimilarityModel:
     def __init__(self,
-                 recommended: Dict[str, List[str]],
+                 male_recommended: Dict[str, List[str]],
+                 female_recommended: Dict[str, List[str]],
                  featuring_model: FeaturingModel,
                  useGPU: bool = False,
                  alpha: Tuple[int, int, int] = (1, 1, 1)):
@@ -48,7 +49,8 @@ class SimilarityModel:
         if useGPU and torch.cuda.is_available():
             self.device = torch.device("cuda")
 
-        self.recommended = recommended
+        self.male_recommended = male_recommended
+        self.female_recommended = female_recommended
         self.featuring_model = featuring_model
         self.featuring_model.changeDevice(useGPU)
 
@@ -142,6 +144,7 @@ class SimilarityModel:
     def __call__(self,
                  user_inputs: List[Image.Image],
                  type: Literal["upper", "lower"],
+                 gender: Literal["male", "female"],
                  k: int = 5,
                  personal_color: Optional[str] = None):
         '''
@@ -149,21 +152,24 @@ class SimilarityModel:
 
         :param user_inputs: Pillow의 Image 객체로 구성된 List. 유저의 사진이 업로드 되어야 한다.
         :param type: 추천받고자 하는 부분이 상의라면 "upper", 하의라면 "lower"
+        :param gender: 유저의 성별. 남자라면 "male", 여자라면 "female".
         :param personal_color: 퍼스널 컬러를 유저가 입력했다면 해당 색상을 넘겨주고, 없다면 None으로 놔두면 자동으로 퍼스널 컬러를 추출해준다.
                                 반드시 PERSONAL_COLOR_RGB의 key 중 하나로 입력이 되어야 한다.
         :param k: 유사도 기준 상위 몇개의 이미지를 반환할 것인지
 
         :return: 유사도 기준 상위 k개의 이미지 파일 feature, 추천 대상 상품들의 유사도 배열
         '''
+        recommended = self.male_recommended if gender=="male" else self.female_recommended
+
         user_features = [self.featuring_model(user_input) for user_input in user_inputs]
 
         if personal_color==None:
             personal_color = self.getPersonalColor(user_features)
 
-        similarity_result = {path:0.0 for path in self.recommended[type]}
+        similarity_result = {path:0.0 for path in recommended[type]}
 
         for user_feature in user_features:
-            for target_input in self.recommended[type]:
+            for target_input in recommended[type]:
                 similarity_result[target_input] += self.getSimilarity(user_feature, target_input, type, personal_color).to(self.cpu_device).item()
 
         sorted_similarity_result = sorted(similarity_result.items(), key=lambda item: item[1], reverse=True)
@@ -172,17 +178,21 @@ class SimilarityModel:
 
 
 if __name__=="__main__":
-    test_recommended = {
-        "upper":[f"../laurant051/features/{i}.pt" for i in range(0, 14+1)],
+    test_male_recommended = {
+        "upper":[f"../data/laurant051/features/{i}.pt" for i in range(0, 14+1)],
         "lower":[],
     }
-    model = SimilarityModel(test_recommended, FeaturingModel())
+    test_female_recommended = {
+        "upper": [f"../data/slowand/features/{i}.pt" for i in range(0, 14 + 1)],
+        "lower": [],
+    }
+    model = SimilarityModel(test_male_recommended, test_female_recommended, FeaturingModel())
 
     user_inputs = []
     for i in range(15, 20+1):
         user_inputs.append(Image.open(f"../test/image/{i}.jpg").convert("RGB"))
 
-    topk, similarity_result = model(user_inputs, "upper")
+    topk, similarity_result = model(user_inputs, "upper", "female")
     print(topk)
     print("\n")
     print(similarity_result)
