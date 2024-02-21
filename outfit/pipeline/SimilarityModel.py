@@ -9,7 +9,7 @@ import torch.nn as nn
 from typing import *
 from enum import Enum
 from colorsys import rgb_to_hsv, hsv_to_rgb
-from .FeaturingModel import FeaturingModel, ClothClassificationModel
+from FeaturingModel import FeaturingModel, ClothClassificationModel
 
 LAST_ACTIVATION_VOLUME = "last_activation_volume"
 GRAM_MATRIX = "gram_matrix"
@@ -55,7 +55,7 @@ class SimilarityModel:
         self.featuring_model.changeDevice(useGPU)
 
         self.cosine_similarity_model = lambda x, y: (F.cosine_similarity(x, y, dim=0)+1)/2
-        self.l1_similarity_model = lambda x, y: F.tanh(1/(F.l1_loss(x, y) + (1e-8)))
+        self.l1_similarity_model = lambda x, y: F.tanh(1/(torch.sqrt(F.mse_loss(x, y)) + (1e-8)))
 
         self.personal_color_type = list(PERSONAL_COLOR_RGB.keys())
 
