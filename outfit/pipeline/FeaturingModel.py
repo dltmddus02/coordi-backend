@@ -9,7 +9,7 @@ from transformers import SegformerImageProcessor, AutoModelForSemanticSegmentati
 from typing import *
 from copy import deepcopy
 from tqdm import tqdm
-from pipeline.Unnormalize import UnNormalize
+from .Unnormalize import UnNormalize
 
 
 CLASS_NUM = 20

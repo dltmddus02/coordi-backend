@@ -9,7 +9,7 @@ import torch.nn as nn
 from typing import *
 from enum import Enum
 from colorsys import rgb_to_hsv, hsv_to_rgb
-from FeaturingModel import FeaturingModel, ClothClassificationModel
+from .FeaturingModel import FeaturingModel, ClothClassificationModel
 
 LAST_ACTIVATION_VOLUME = "last_activation_volume"
 GRAM_MATRIX = "gram_matrix"
