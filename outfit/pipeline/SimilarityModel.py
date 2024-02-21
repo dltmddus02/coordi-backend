@@ -9,7 +9,7 @@ import torch.nn as nn
 from typing import *
 from enum import Enum
 from colorsys import rgb_to_hsv, hsv_to_rgb
-from FeaturingModel import FeaturingModel, ClothClassificationModel
+from .FeaturingModel import FeaturingModel, ClothClassificationModel
 
 LAST_ACTIVATION_VOLUME = "last_activation_volume"
 GRAM_MATRIX = "gram_matrix"
@@ -146,7 +146,7 @@ class SimilarityModel:
                  type: Literal["upper", "lower"],
                  gender: Literal["male", "female"],
                  k: int = 5,
-                 personal_color: Optional[str] = 'NONE'):
+                 personal_color: Optional[str] = None):
         '''
         유저 입력을 토대로 유사도를 계산하여 상위 k개를 반환하는 함수입니다.
 
@@ -162,9 +162,10 @@ class SimilarityModel:
         '''
         recommended = self.male_recommended if gender=="male" else self.female_recommended
 
+
         user_features = [self.featuring_model(user_input) for user_input in user_inputs]
 
-        if personal_color=='NONE':
+        if personal_color==None:
             personal_color = self.getPersonalColor(user_features)
 
         similarity_result = {path:0.0 for path in recommended[type]}
