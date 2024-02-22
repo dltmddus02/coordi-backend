@@ -71,7 +71,7 @@ class FeaturingModel:
     def __init__(self,
                  useGPU: bool = False,
                  segformer_path: str = "mattmdjaga/segformer_b2_clothes",
-                 classifier_path: str = "./checkpoint/classifier_efficientnetb0.pt",
+                 classifier_path: str = "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt",
                  classifier_input_size: int = 224,
                  layer_gram_matrix: int = 4
                  ):

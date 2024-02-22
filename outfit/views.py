@@ -32,7 +32,7 @@ def show_top3_image(request):
     print("넘어왔당")
     if base64_images:
         try:
-            file_paths = [f"./laurant051/image/{i}.jpg" for i in range(0, 50+1)]
+            file_paths = [f"./laurant051/image/{i}.jpg" for i in range(0, 3+1)]
             for file_path in file_paths:
                 try:
                     image = Image.open(file_path).convert("RGB")
@@ -86,6 +86,7 @@ def show_top3_image(request):
             return JsonResponse({'count': k, 'topk_upper': new_topk_upper_path, 'topk_lower': new_topk_lower_path, 'topk_shopping_upper': new_topk_upper_shopping, 'topk_shopping_lower': new_topk_lower_shopping})
         except Exception as e:
             # 이미지 처리 중 예외가 발생한 경우 오류 응답 반환
+            traceback.print_exc()
             return JsonResponse({'error': '모델 처리 중 오류 발생. 에러 메시지: ' + str(e)})
     else:
         # 이미지가 전송되지 않았을 경우 오류 응답 반환
