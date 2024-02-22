@@ -29,25 +29,21 @@ def show_top3_image(request):
     gender = request_data.get('gender')
     color = request_data.get('color')
     base64_images = request_data.get('images', [])    
-    
-    # 여기부터
     print("넘어왔당")
     if base64_images:
         try:
-            for base64_image in base64_images:
-                if base64_image.startswith('data:image/jpeg;base64,'):
-                    base64_image = base64_image.split('base64,')[-1]
-                elif base64_image.startswith('data:image/png;base64,'):
-                    base64_image = base64_image.split('base64,')[-1]
-                
-                image_data = base64.b64decode(base64_image)
-                image = Image.open(BytesIO(image_data))
-                user_inputs.append(image)
+            file_paths = [f"./laurant051/image/{i}.jpg" for i in range(0, 50+1)]
+            for file_path in file_paths:
+                try:
+                    image = Image.open(file_path).convert("RGB")
+                    user_inputs.append(image)
+                except IOError:
+                    print("error")
 
             print("오류 처리??")
             print(user_inputs)
             csv_df = pd.read_csv('./laurant051/laurant051.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
-            # 상하의나누기
+            # 상하의 나누기
             upper_idx=[]
             lower_idx=[]
             for idx, row in csv_df.iterrows():
@@ -61,15 +57,14 @@ def show_top3_image(request):
                 "upper":[f"./laurant051/features/{i}.pt" for i in range(0, 50+1)],
                 "lower":[f"./laurant051/features/{i}.pt" for i in range(0, 50+1)],
             }
-            # print("test_male_recommended")
             test_female_recommended = {
                 "upper": [f"./slowand/features/{i}.pt" for i in range(0, 50+1)],
                 "lower": [f"./slowand/features/{i}.pt" for i in range(0, 50+1)],
             }
             model = SimilarityModel(test_male_recommended, test_female_recommended, FeaturingModel())
             k=3
-            topk_upper, similarity_result_upper = model(image, "upper", gender, k)
-            topk_lower, similarity_result_lower = model(image, "lower", gender, k)
+            topk_upper, similarity_result_upper = model(user_inputs, "upper", gender, k)
+            topk_lower, similarity_result_lower = model(user_inputs, "lower", gender, k)
             new_topk_upper_path=[]
             new_topk_upper_shopping=[]
             new_topk_lower_path=[]
