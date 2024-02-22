@@ -2,6 +2,8 @@ import traceback
 import pandas as pd
 import json
 import base64
+import os
+from django.conf import settings
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
@@ -30,12 +32,15 @@ model_initialized = False
 user_inputs = []
 model=''
 csv_df=''
+DIR = settings.BASE_DIR
 
 def initialize_model(gender):
     global model_initialized, model, female_upper_idx, female_lower_idx, male_upper_idx, male_lower_idx, male_recommended, female_recommended, female_df, male_df
+    # D:\coordi_recommend\outfit_recommendation
+    # print(settings.BASE_DIR) 
     if not model_initialized:
-        female_df = pd.read_csv('./slowand/slowand.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
-        male_df = pd.read_csv('./laurant051/laurant051.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
+        female_df = pd.read_csv(os.path.join(DIR,'slowand/slowand.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url'])
+        male_df = pd.read_csv(os.path.join(DIR,'laurant051/laurant051.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url'])
         for idx, row in female_df.iterrows():
             if row['position']==0:
                 female_upper_idx.append(idx)
@@ -77,7 +82,6 @@ def show_top3_image(request):
     gender = request_data.get('gender')
     color = request_data.get('color')
     base64_images = request_data.get('images', [])
-    print(color)
     print("넘어왔당")
     if base64_images:
         try:

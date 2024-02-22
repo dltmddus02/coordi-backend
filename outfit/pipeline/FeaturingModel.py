@@ -1,5 +1,7 @@
 import torch
 import torchvision
+import os
+from django.conf import settings
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms
@@ -10,6 +12,7 @@ from typing import *
 from copy import deepcopy
 from tqdm import tqdm
 from .Unnormalize import UnNormalize
+DIR = settings.BASE_DIR
 
 
 CLASS_NUM = 20
@@ -71,7 +74,7 @@ class FeaturingModel:
     def __init__(self,
                  useGPU: bool = False,
                  segformer_path: str = "mattmdjaga/segformer_b2_clothes",
-                 classifier_path: str = "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt",
+                 classifier_path: str = os.path.join(DIR, "outfit/pipeline/checkpoint/classifier_efficientnetb0.pt"),
                  classifier_input_size: int = 224,
                  layer_gram_matrix: int = 4
                  ):
