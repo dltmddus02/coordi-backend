@@ -146,7 +146,7 @@ class SimilarityModel:
                  type: Literal["upper", "lower"],
                  gender: Literal["male", "female"],
                  k: int = 5,
-                 personal_color: Optional[str] = None):
+                 personal_color: Optional[str] = '모름'):
         '''
         유저 입력을 토대로 유사도를 계산하여 상위 k개를 반환하는 함수입니다.
 
@@ -154,7 +154,7 @@ class SimilarityModel:
         :param type: 추천받고자 하는 부분이 상의라면 "upper", 하의라면 "lower"
 
         :param gender: 유저의 성별. 남자라면 "male", 여자라면 "female".
-        :param personal_color: 퍼스널 컬러를 유저가 입력했다면 해당 색상을 넘겨주고, 없다면 None으로 놔두면 자동으로 퍼스널 컬러를 추출해준다.
+        :param personal_color: 퍼스널 컬러를 유저가 입력했다면 해당 색상을 넘겨주고, 없다면 ''으로 놔두면 자동으로 퍼스널 컬러를 추출해준다.
                                 반드시 PERSONAL_COLOR_RGB의 key 중 하나로 입력이 되어야 한다.
         :param k: 유사도 기준 상위 몇개의 이미지를 반환할 것인지
 
@@ -165,7 +165,7 @@ class SimilarityModel:
 
         user_features = [self.featuring_model(user_input) for user_input in user_inputs]
 
-        if personal_color==None:
+        if personal_color=='모름':
             personal_color = self.getPersonalColor(user_features)
 
         similarity_result = {path:0.0 for path in recommended[type]}

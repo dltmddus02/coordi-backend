@@ -20,56 +20,90 @@ from .pipeline.SimilarityModel import SimilarityModel
 from .pipeline.FeaturingModel import FeaturingModel
 
 # Create your views here.
-
+male_upper_idx=[]
+male_lower_idx=[]
+female_upper_idx=[]
+female_lower_idx=[]
+male_recommended={}
+female_recommended={}
+model_initialized = False
 user_inputs = []
+model=''
+csv_df=''
+
+def initialize_model(gender):
+    global model_initialized, model, female_upper_idx, female_lower_idx, male_upper_idx, male_lower_idx, male_recommended, female_recommended, female_df, male_df
+    if not model_initialized:
+        female_df = pd.read_csv('./slowand/slowand.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
+        male_df = pd.read_csv('./laurant051/laurant051.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
+        for idx, row in female_df.iterrows():
+            if row['position']==0:
+                female_upper_idx.append(idx)
+            else:
+                female_lower_idx.append(idx)
+        for idx, row in male_df.iterrows():
+            if row['position']==0:
+                male_upper_idx.append(idx)
+            else:
+                male_lower_idx.append(idx)
+        male_recommended = {
+            "upper":[f"./laurant051/features/{i}.pt" for i in male_upper_idx],
+            "lower":[f"./laurant051/features/{i}.pt" for i in male_lower_idx],
+        }
+        female_recommended = {
+            "upper": [f"./slowand/features/{i}.pt" for i in female_upper_idx],
+            "lower": [f"./slowand/features/{i}.pt" for i in female_lower_idx],
+        }
+        model = SimilarityModel(male_recommended, female_recommended, FeaturingModel())
+        if gender == '여자':
+            csv_df = female_df
+        else:
+            csv_df = male_df
+        model_initialized = True
+        return model, csv_df
+    else:
+        if gender == '여자':
+            csv_df = female_df
+        else:
+            csv_df = male_df
+        model_initialized = True
+        print("Model has already been initialized.")
+        return model, csv_df
+
 @api_view(['POST'])
 def show_top3_image(request):
-    global user_inputs
+    global model, user_inputs, female_upper_idx, female_lower_idx, male_upper_idx, male_lower_idx, female_recommended, male_recommended
     request_data = request.data
     gender = request_data.get('gender')
     color = request_data.get('color')
-    base64_images = request_data.get('images', [])    
+    base64_images = request_data.get('images', [])
+    print(color)
     print("넘어왔당")
     if base64_images:
         try:
-            file_paths = [f"./laurant051/image/{i}.jpg" for i in range(0, 3+1)]
-            for file_path in file_paths:
-                try:
-                    image = Image.open(file_path).convert("RGB")
-                    user_inputs.append(image)
-                except IOError:
-                    print("error")
+            for base64_image in base64_images:
+                if base64_image.startswith('data:image/jpeg;base64,'):
+                    base64_image = base64_image.split('base64,')[-1]
+                elif base64_image.startswith('data:image/png;base64,'):
+                    base64_image = base64_image.split('base64,')[-1]
 
-            print("오류 처리??")
-            print(user_inputs)
-            csv_df = pd.read_csv('./laurant051/laurant051.csv', header=None, names=['index', 'position', 'img_url', 'shopping_url'])
-            # 상하의 나누기
-            upper_idx=[]
-            lower_idx=[]
-            for idx, row in csv_df.iterrows():
-                if row['position']==0:
-                    upper_idx.append(idx)
-                else:
-                    lower_idx.append(idx)
-        
-
-            test_male_recommended = {
-                "upper":[f"./laurant051/features/{i}.pt" for i in range(0, 50+1)],
-                "lower":[f"./laurant051/features/{i}.pt" for i in range(0, 50+1)],
-            }
-            test_female_recommended = {
-                "upper": [f"./slowand/features/{i}.pt" for i in range(0, 50+1)],
-                "lower": [f"./slowand/features/{i}.pt" for i in range(0, 50+1)],
-            }
-            model = SimilarityModel(test_male_recommended, test_female_recommended, FeaturingModel())
+                image_data = base64.b64decode(base64_image)
+                image = Image.open(BytesIO(image_data))
+                user_inputs.append(image)
+            model, csv_df = initialize_model(gender)
             k=3
-            topk_upper, similarity_result_upper = model(user_inputs, "upper", gender, k)
-            topk_lower, similarity_result_lower = model(user_inputs, "lower", gender, k)
+            topk_upper, similarity_result_upper = model(user_inputs, "upper", gender, k, color)
+            topk_lower, similarity_result_lower = model(user_inputs, "lower", gender, k, color)
+            print(topk_upper)
             new_topk_upper_path=[]
             new_topk_upper_shopping=[]
             new_topk_lower_path=[]
             new_topk_lower_shopping=[]
             for path in topk_upper:
+                # if gender == '여자':
+                #     csv_df = female_df
+                # else:
+                #     csv_df = male_df
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
                 matching_row = csv_df[csv_df['index'] == int(n)]                
