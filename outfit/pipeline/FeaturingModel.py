@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import os
-from django.conf import settings
+from myoutfit import settings
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, models, transforms

@@ -52,12 +52,12 @@ def initialize_model(gender):
             else:
                 male_lower_idx.append(idx)
         male_recommended = {
-            "upper":[f"./laurant051/features/{i}.pt" for i in male_upper_idx],
-            "lower":[f"./laurant051/features/{i}.pt" for i in male_lower_idx],
+            "upper":[os.path.join(DIR, f"laurant051/features/{i}.pt") for i in male_upper_idx],
+            "lower":[os.path.join(DIR, f"laurant051/features/{i}.pt") for i in male_lower_idx],
         }
         female_recommended = {
-            "upper": [f"./slowand/features/{i}.pt" for i in female_upper_idx],
-            "lower": [f"./slowand/features/{i}.pt" for i in female_lower_idx],
+            "upper": [os.path.join(DIR, f"slowand/features/{i}.pt") for i in female_upper_idx],
+            "lower": [os.path.join(DIR, f"slowand/features/{i}.pt") for i in female_lower_idx],
         }
         model = SimilarityModel(male_recommended, female_recommended, FeaturingModel())
         if gender == '여자':
