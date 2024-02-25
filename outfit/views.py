@@ -122,7 +122,7 @@ def show_top3_image(request):
                 # print(n)
                 new_topk_lower_path.append(matching_row['img_url'].values[0])
                 new_topk_lower_shopping.append(matching_row['shopping_url'].values[0])
-                new_topk_lower_shopping.append(int(n))
+                # new_topk_lower_shopping.append(int(n))
 
             return JsonResponse({'count': k, 'topk_upper': new_topk_upper_path, 'topk_lower': new_topk_lower_path, 'topk_shopping_upper': new_topk_upper_shopping, 'topk_shopping_lower': new_topk_lower_shopping})
         except Exception as e:
