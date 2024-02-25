@@ -46,6 +46,7 @@ def initialize_model(gender):
                 female_upper_idx.append(idx)
             else:
                 female_lower_idx.append(idx)
+        print(female_upper_idx)
         for idx, row in male_df.iterrows():
             if row['position']==0:
                 male_upper_idx.append(idx)
@@ -60,14 +61,14 @@ def initialize_model(gender):
             "lower": [os.path.join(DIR, f"slowand/features/{i}.pt") for i in female_lower_idx],
         }
         model = SimilarityModel(male_recommended, female_recommended, FeaturingModel())
-        if gender == '여자':
+        if gender == 'female':
             csv_df = female_df
         else:
             csv_df = male_df
         model_initialized = True
         return model, csv_df
     else:
-        if gender == '여자':
+        if gender == 'female':
             csv_df = female_df
         else:
             csv_df = male_df
@@ -104,19 +105,21 @@ def show_top3_image(request):
             new_topk_lower_path=[]
             new_topk_lower_shopping=[]
             for path in topk_upper:
-                # if gender == '여자':
-                #     csv_df = female_df
-                # else:
-                #     csv_df = male_df
+                # print(path)
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
-                matching_row = csv_df[csv_df['index'] == int(n)]                
+                matching_row = csv_df[csv_df['index'] == int(n)]
+                # print("upper")
+                # print(n)
                 new_topk_upper_path.append(matching_row['img_url'].values[0])
                 new_topk_upper_shopping.append(matching_row['shopping_url'].values[0])
+                print(new_topk_upper_path)
             for path in topk_lower:
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
                 matching_row = csv_df[csv_df['index'] == int(n)]
+                # print("lower")
+                # print(n)
                 new_topk_lower_path.append(matching_row['img_url'].values[0])
                 new_topk_lower_shopping.append(matching_row['shopping_url'].values[0])
                 new_topk_lower_shopping.append(int(n))
