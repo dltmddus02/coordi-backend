@@ -39,8 +39,8 @@ def initialize_model(gender):
     # D:\coordi_recommend\outfit_recommendation
     # print(settings.BASE_DIR) 
     if not model_initialized:
-        female_df = pd.read_csv(os.path.join(DIR,'slowand/slowand.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url'])
-        male_df = pd.read_csv(os.path.join(DIR,'laurant051/laurant051.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url'])
+        female_df = pd.read_csv(os.path.join(DIR,'slowand/slowand.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url', "title"], index_col='index', encoding='UTF8')
+        male_df = pd.read_csv(os.path.join(DIR,'laurant051/laurant051.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url', "title"], index_col='index', encoding='cp949')
         for idx, row in female_df.iterrows():
             if row['position']==0:
                 female_upper_idx.append(idx)
