@@ -40,7 +40,7 @@ def initialize_model(gender):
     # print(settings.BASE_DIR) 
     if not model_initialized:
         female_df = pd.read_csv(os.path.join(DIR,'slowand/slowand.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url', "title"], index_col='index', encoding='UTF8')
-        male_df = pd.read_csv(os.path.join(DIR,'laurant051/laurant051.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url', "title"], index_col='index', encoding='cp949')
+        male_df = pd.read_csv(os.path.join(DIR,'laurant051/laurant051.csv'), header=None, names=['index', 'position', 'img_url', 'shopping_url', "title"], index_col='index', encoding='UTF8')
         for idx, row in female_df.iterrows():
             if row['position']==0:
                 female_upper_idx.append(idx)
@@ -108,7 +108,7 @@ def show_top3_image(request):
                 # print(path)
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
-                matching_row = csv_df[csv_df['index'] == int(n)]
+                matching_row = csv_df.loc[[int(n)]] #csv_df[csv_df['index'] == int(n)]
                 # print("upper")
                 # print(n)
                 new_topk_upper_path.append(matching_row['img_url'].values[0])
@@ -117,7 +117,7 @@ def show_top3_image(request):
             for path in topk_lower:
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
-                matching_row = csv_df[csv_df['index'] == int(n)]
+                matching_row = csv_df.loc[[int(n)]] #csv_df[csv_df['index'] == int(n)]
                 # print("lower")
                 # print(n)
                 new_topk_lower_path.append(matching_row['img_url'].values[0])
