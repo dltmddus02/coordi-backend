@@ -46,7 +46,7 @@ def initialize_model(gender):
                 female_upper_idx.append(idx)
             else:
                 female_lower_idx.append(idx)
-        print(female_upper_idx)
+        # print(female_upper_idx)   경진 주석처리!!
         for idx, row in male_df.iterrows():
             if row['position']==0:
                 male_upper_idx.append(idx)
@@ -96,14 +96,16 @@ def show_top3_image(request):
                 image = Image.open(BytesIO(image_data))
                 user_inputs.append(image)
             model, csv_df = initialize_model(gender)
-            k=3
+            k=5     # 경진 수정!!
             topk_upper, similarity_result_upper = model(user_inputs, "upper", gender, k, color)
             topk_lower, similarity_result_lower = model(user_inputs, "lower", gender, k, color)
-            print(topk_upper)
+            # print(topk_upper)     # 경진 주석처리!!
             new_topk_upper_path=[]
             new_topk_upper_shopping=[]
+            new_topk_upper_title=[]     # 경진 추가!!
             new_topk_lower_path=[]
             new_topk_lower_shopping=[]
+            new_topk_lower_title=[]     # 경진 추가!!
             for path in topk_upper:
                 # print(path)
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
@@ -113,7 +115,8 @@ def show_top3_image(request):
                 # print(n)
                 new_topk_upper_path.append(matching_row['img_url'].values[0])
                 new_topk_upper_shopping.append(matching_row['shopping_url'].values[0])
-                print(new_topk_upper_path)
+                new_topk_upper_title.append(matching_row['title'].values[0])     # 경진 추가!!
+                # print(new_topk_upper_path)        # 경진 주석처리!!
             for path in topk_lower:
                 new_path=path.replace("features", "image").replace(".pt",".jpg")
                 n = new_path.split('/')[-1].split('.')[0]
@@ -123,8 +126,11 @@ def show_top3_image(request):
                 new_topk_lower_path.append(matching_row['img_url'].values[0])
                 new_topk_lower_shopping.append(matching_row['shopping_url'].values[0])
                 # new_topk_lower_shopping.append(int(n))
+                new_topk_lower_title.append(matching_row['title'].values[0])     # 경진 추가!!
 
-            return JsonResponse({'count': k, 'topk_upper': new_topk_upper_path, 'topk_lower': new_topk_lower_path, 'topk_shopping_upper': new_topk_upper_shopping, 'topk_shopping_lower': new_topk_lower_shopping})
+            return JsonResponse({'count': k, 'topk_upper': new_topk_upper_path, 'topk_lower': new_topk_lower_path, 'topk_shopping_upper': new_topk_upper_shopping, 'topk_shopping_lower': new_topk_lower_shopping, 'topk_title_upper': new_topk_upper_title, # 경진 추가!!
+            'topk_title_lower': new_topk_lower_title, # 경진 추가!!
+            })
         except Exception as e:
             # 이미지 처리 중 예외가 발생한 경우 오류 응답 반환
             traceback.print_exc()
