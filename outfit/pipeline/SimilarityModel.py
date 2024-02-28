@@ -15,7 +15,7 @@ LAST_ACTIVATION_VOLUME = "last_activation_volume"
 GRAM_MATRIX = "gram_matrix"
 AVERAGE_RGB = "average_rgb"
 
-LOWER_DEFAULT_COLOR = [(0, 0, 0), (255, 255, 255), (156, 156, 155), (217, 217, 215), (83, 86, 91), (254, 255, 239), (0, 31, 98), (61, 63, 107), (97, 134, 176), (38, 58, 84), (35, 40, 51), (33, 35, 34)]
+LOWER_DEFAULT_COLOR = [] #[(0, 0, 0), (255, 255, 255), (156, 156, 155), (217, 217, 215), (83, 86, 91), (254, 255, 239), (0, 31, 98), (61, 63, 107), (97, 134, 176), (38, 58, 84), (35, 40, 51), (33, 35, 34)]
 PERSONAL_COLOR_RGB = {
     "WSB":[(215, 86, 116), (240, 95, 86), (252, 141, 60), (249, 187, 43), (217, 199, 27), (119, 187, 76), (3, 165, 131), (1, 148, 160), (1, 125, 175), (77, 115, 186), (139, 99, 172), (171, 87, 146), (181, 24, 78), (221, 55, 55), (230, 109, 0), (238, 172, 1), (201, 187, 1), (74, 163, 21), (2, 140, 105), (1, 124, 140), (0, 87, 146), (1, 79, 157), (102, 61, 140), (137, 44, 114)],
     "WSL":[(234, 185, 186), (233, 186, 170), (240, 205, 170), (240, 225, 182), (216, 214, 168), (164, 207, 183), (158, 205, 201), (165, 202, 216), (168, 183, 206), (183, 179, 204), (198, 175, 196), (223, 188, 199), (243, 140, 143), (255, 158, 125), (251, 184, 105), (237, 211, 103), (203, 202, 96), (115, 200, 156), (63, 171, 165), (82, 166, 192), (100, 145, 192), (142, 134, 189), (172, 126, 172), (217, 129, 149)],
@@ -54,9 +54,7 @@ class SimilarityModel:
         self.featuring_model = featuring_model
         self.featuring_model.changeDevice(useGPU)
 
-        self.cosine_similarity_model = lambda x, y: (F.cosine_similarity(x, y, dim=0)+1)/2
         self.l1_similarity_model = lambda x, y: F.tanh(1/(torch.sqrt(F.mse_loss(x, y)) + (1e-8)))
-
         self.personal_color_type = list(PERSONAL_COLOR_RGB.keys())
 
         self.alpha = alpha
@@ -132,8 +130,9 @@ class SimilarityModel:
         personal_color_rgb = PERSONAL_COLOR_RGB[personal_color] + (LOWER_DEFAULT_COLOR if type=="lower" else [])
         personal_color_similarity = self.l1_similarity_model(target_feature[type][AVERAGE_RGB], torch.tensor(personal_color_rgb[0]))
         for rgb in personal_color_rgb[1:]:
-            new_sim = self.l1_similarity_model(target_feature[type][AVERAGE_RGB], torch.tensor(rgb))
-            personal_color_similarity = max(personal_color_similarity, new_sim)
+            if target_feature[type][AVERAGE_RGB] != None:
+                new_sim = self.l1_similarity_model(target_feature[type][AVERAGE_RGB], torch.tensor(rgb))
+                personal_color_similarity = max(personal_color_similarity, new_sim)
 
         final_similarity = last_activation_volume_similarity * self.alpha[0] + gram_matrix_similarity * self.alpha[1] + personal_color_similarity * self.alpha[2]
         final_similarity /= sum(self.alpha)

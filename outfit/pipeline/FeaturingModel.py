@@ -140,10 +140,13 @@ class FeaturingModel:
             w = torch.max(x)-torch.min(x)
             if h>0 and w>0:
                 image = self.topilimage(crop(image, torch.min(y), torch.min(x), h, w))
+                masks = crop(masks, torch.min(y), torch.min(x), h, w)
             else:
                 image = self.topilimage(torch.zeros_like(image))
+                masks = None
         else:
             image = self.topilimage(torch.zeros_like(image))
+            masks = None
 
         return image, masks
 
@@ -176,7 +179,7 @@ class FeaturingModel:
 
         for name, labels in PART_LABEL.items():
             features = {}
-            part_image = self.getPart(image, pred_seg, labels, image_channel=COLOR_SPACE_MAP[color_space])[0]
+            part_image, masks = self.getPart(image, pred_seg, labels, image_channel=COLOR_SPACE_MAP[color_space])
 
             input_classifier = self.transformer(part_image).unsqueeze(0).to(self.device)
             activation_volume = self.classifier_model[:self.layer_gram_matrix](input_classifier)
@@ -185,7 +188,10 @@ class FeaturingModel:
 
             features["last_activation_volume"] = torch.flatten(self.avgpool(output_classifier), 1).squeeze(0).to(self.cpu_device)
             features["gram_matrix"] = self.gram_matrix(activation_volume).to(self.cpu_device)
-            features["average_rgb"] = 255*self.unnormalize(input_classifier).squeeze(0).mean(dim=-1).mean(dim=-1)
+            if masks != None:
+                features["average_rgb"] = torch.tensor([self.totensor(part_image)[0][masks[0]].mean(dim=-1), self.totensor(part_image)[1][masks[1]].mean(dim=-1), self.totensor(part_image)[2][masks[2]].mean(dim=-1)])
+            else:
+                features["average_rgb"] = None
 
             result[name] = features
 
